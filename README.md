@@ -1,4 +1,4 @@
 # Contents
 
-1. Inro
+1. Intro
 2. Software Design Principles
