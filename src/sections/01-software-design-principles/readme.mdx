@@ -1,0 +1,175 @@
+TOPIC 1: Software Design Principles. What, When, Why, Where ...?
+
+
+
+Task 1. To build a button component to allow users to take actions.
+
+Requirements:
+    - it should display a text label;
+    - it should perform a user action.
+
+```jsx
+const Button = ({ text, ...props }) => {
+  return (
+    <button
+      // 1. We have a single place to control the component styling.
+      style={{ padding: "8px 16px" }}
+      // 2. We can utilize built-in features, nothing else.
+      //    We should care about something we dont know right now or in advance.
+      {...props}
+    >
+      {text}
+    </button>
+  );
+};
+
+const ButtonUsage = () => {
+  return (
+    <Button
+      text="Say Hello"
+      onClick={() => console.log("Hello, world")}
+     />
+  );
+};
+```
+
+Summary:
+
+1. DRY      - https://en.wikipedia.org/wiki/Don%27t_repeat_yourself
+2. WET      - https://www.youtube.com/watch?v=17KCHwOwgms (by Dan Abramov)
+3. YAGNY    - https://martinfowler.com/bliki/Yagni.html (by Martin Fowler)
+4. KISS     - https://en.wikipedia.org/wiki/KISS_principle
+
+
+
+
+Task 2. To adjust the button component to display an icon.
+
+Requirements:
+    - it should display an icon to enhance UX by giving more additional information;
+
+
+Solution 1. Naive version. No inversion of control.
+
+```jsx
+const Button = ({
+  text,
+
+  iconName, // (*)
+  // icon...
+  // icon...
+  // icon...
+
+  anotherGroup, // (**)
+  // another...
+  // another...
+
+  ...buttonProps // (***)
+}) => (
+  <button style={{ padding: "8px 16px" }} {...buttonProps}>
+    <Icon name={iconName} />
+    <span>{text}</span>
+  </button>
+);
+
+
+const Usage = () => (
+  <Button
+    text="Say Hello"
+    iconName="warning"
+    onClick={() => console.log("Hello, world")}
+ />
+);
+```
+
+
+Solution 2. We have control over the icon component.
+
+```jsx
+const Button = ({
+  children, // 1. We dont care about button's contents.
+  icon,     // 2. We dont know what is the icon. At the same time we`re processing its props.
+  iconPosition = 'left',
+  ...props
+}) => {
+  const content = {
+    'left': [icon, children], // add keys (!)
+    'right': [children, icon],
+  }[iconPosition];
+
+  return (
+    <button
+      style={{padding: '8px 16px'}}
+      {...props}
+    >
+      {content.map((el, index) = cloneElement(el, { key: index }))}
+    </button>
+  );
+}
+
+const Usage = () => (
+    <Button
+      icon={<Icon name="warning" />}
+      iconPosition='right'
+      // ...
+      onClick={() => console.log('Hello, world')}
+    >
+        Say Hello
+    </Button>
+);
+```
+
+
+Solution 3. Full inversion of control. Button takes only its own props and knows nothing about the icon.
+
+```jsx
+const Button = ({
+  children,
+  ...props
+}) => {
+  return (
+    <button
+      style={{padding: '8px 16px'}}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+const Usage = () {
+  return (
+    <div>
+
+      <Button onClick={() => console.log('Hello, world')}>
+        <Icon name="warn" />
+        <span>Say Hello</span>
+      </Button>
+
+      <Button onClick={() => console.log('Hello, world')}>
+        <Typography>Say Hello</Typography>
+        <Icon name="error" />
+      </Button>
+
+      <Button onClick={() => console.log('Hello, world')}>
+        <AvatarIcon initials="EZ" />
+        <span>Say Hello</span>
+      </Button>
+
+    </div>
+  )
+}
+```
+
+Summary:
+
+1. On the first pass, make it work.
+   Propapocalipsis happens when a component has too many props.
+   It leads to complexity and collisions.
+
+2. On the second pass, make it elegant.
+   We reduced the number of props by moving the Icon component outside.
+   However, the button still cares about icon position.
+
+3. On the third pass, make it SOLID.
+
